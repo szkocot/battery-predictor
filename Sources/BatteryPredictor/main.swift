@@ -6,11 +6,14 @@ struct PowerSnapshot {
     let seconds: Double
     let percentage: Int?
     let externalPower: Bool
+    var isCharging = false
     let status: String
 
-    var title: String {
-        BatteryEstimate.title(seconds: seconds, onExternalPower: externalPower)
+    var estimate: BatteryEstimate {
+        BatteryEstimate(seconds: seconds, onExternalPower: externalPower, isCharging: isCharging)
     }
+
+    var title: String { estimate.title }
 
     static func read() -> PowerSnapshot {
         let seconds = IOPSGetTimeRemainingEstimate()
@@ -30,7 +33,7 @@ struct PowerSnapshot {
             let external = details[kIOPSPowerSourceStateKey] as? String == kIOPSACPowerValue
             let charging = details[kIOPSIsChargingKey] as? Bool == true
             let status = charging ? "Charging" : (external ? "Connected to power" : "On battery")
-            return PowerSnapshot(seconds: seconds, percentage: percentage, externalPower: external, status: status)
+            return PowerSnapshot(seconds: seconds, percentage: percentage, externalPower: external, isCharging: charging, status: status)
         }
         return PowerSnapshot(seconds: -1, percentage: nil, externalPower: false, status: "No internal battery")
     }
@@ -43,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var wakeObserver: NSObjectProtocol?
     private let batteryItem = NSMenuItem(title: "Battery: unavailable", action: nil, keyEquivalent: "")
     private let powerItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+    private let remainingItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let loginItem = LoginItemController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -50,8 +54,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         let menu = NSMenu()
         menu.delegate = self
-        menu.addItem(NSMenuItem(title: "Battery Predictor", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "🪫 Battery Predictor", action: nil, keyEquivalent: ""))
         menu.addItem(.separator())
+        menu.addItem(remainingItem)
         menu.addItem(batteryItem)
         menu.addItem(powerItem)
         menu.addItem(.separator())
@@ -84,16 +89,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func refresh() {
         let snapshot = PowerSnapshot.read()
+        statusItem.isVisible = snapshot.estimate.isVisible
         statusItem.button?.title = snapshot.title
         statusItem.button?.toolTip = "Battery Predictor — \(snapshot.status)"
         statusItem.button?.setAccessibilityLabel("Battery Predictor: \(snapshot.title)")
         batteryItem.title = snapshot.percentage.map { "Battery: \($0)%" } ?? "Battery: unavailable"
         powerItem.title = snapshot.status
+        remainingItem.title = "Remaining: \(snapshot.estimate.detailedTitle)"
     }
 
     @objc private func quitApp() { NSApplication.shared.terminate(nil) }
 
-    func menuWillOpen(_ menu: NSMenu) { loginItem.refresh() }
+    func menuWillOpen(_ menu: NSMenu) {
+        refresh()
+        loginItem.refresh()
+    }
 
     func applicationWillTerminate(_ notification: Notification) {
         timer?.invalidate()

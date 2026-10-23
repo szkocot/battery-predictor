@@ -1,8 +1,24 @@
-public enum BatteryEstimate {
-    public static func title(seconds: Double, onExternalPower: Bool = false) -> String {
-        let hours = (seconds / 3600).rounded(.down)
-        guard !onExternalPower, seconds.isFinite, seconds >= 0,
-              hours < Double(Int.max) else { return "-1h" }
-        return "\(Int(hours))h"
+public struct BatteryEstimate {
+    private let minutes: Int?
+    public let isVisible: Bool
+
+    public init(seconds: Double, onExternalPower: Bool = false, isCharging: Bool = false) {
+        let wholeMinutes = (seconds / 60).rounded(.down)
+        if !onExternalPower, seconds.isFinite, seconds >= 0, wholeMinutes < Double(Int.max) {
+            minutes = Int(wholeMinutes)
+        } else {
+            minutes = nil
+        }
+        isVisible = !isCharging
+    }
+
+    public var title: String {
+        guard let minutes else { return "-1h" }
+        return minutes < 60 ? "\(minutes)m" : "\(minutes / 60)h"
+    }
+
+    public var detailedTitle: String {
+        guard let minutes else { return "-1h" }
+        return "\(minutes / 60)h \(minutes % 60)m"
     }
 }

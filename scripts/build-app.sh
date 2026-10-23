@@ -11,7 +11,9 @@ swift build -c release "$@"
 bin_dir="$(swift build -c release --show-bin-path "$@")"
 app="$(pwd)/dist/Battery Predictor.app"
 mkdir -p "$app/Contents/MacOS"
+mkdir -p "$app/Contents/Resources"
 cp "$bin_dir/BatteryPredictor" "$app/Contents/MacOS/BatteryPredictor"
+swift scripts/generate-icon.swift dist/AppIcon.iconset "$app/Contents/Resources/AppIcon.icns"
 cat > "$app/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -21,6 +23,7 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
     <key>CFBundleIdentifier</key><string>com.szkocot.battery-predictor</string>
     <key>CFBundleExecutable</key><string>BatteryPredictor</string>
     <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundleShortVersionString</key><string>0.2.0</string>
     <key>CFBundleVersion</key><string>2</string>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
