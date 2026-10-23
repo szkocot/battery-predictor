@@ -1,6 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+app_version="${APP_VERSION:-$(cat VERSION)}"
+build_number="${APP_BUILD_NUMBER:-1}"
+if [[ ! "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || [[ ! "$build_number" =~ ^[0-9]+$ ]]; then
+    echo "Expected APP_VERSION as X.Y.Z and APP_BUILD_NUMBER as an integer." >&2
+    exit 1
+fi
 swift build -c release "$@"
 bin_dir="$(swift build -c release --show-bin-path "$@")"
 app="$(pwd)/dist/Battery Predictor.app"
@@ -22,5 +28,7 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
     <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $app_version" "$app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build_number" "$app/Contents/Info.plist"
 codesign --force --sign - "$app"
 printf 'Built: %s\n' "$app"

@@ -2,6 +2,10 @@
 
 A simple macOS menu bar utility that estimates remaining battery life in hours.
 
+## Download
+
+Download the universal app ZIP from [GitHub Releases](https://github.com/szkocot/battery-predictor/releases), unzip it, and move **Battery Predictor.app** to Applications. It supports Apple Silicon and Intel Macs running macOS 13 or later. Release builds are ad-hoc signed, not notarized; macOS may require you to approve the app in System Settings → Privacy & Security on first open.
+
 ## Goals
 
 - Show a clear remaining battery estimate in the menu bar.
@@ -35,3 +39,13 @@ swift run BatteryPredictor --diagnostics
 ```
 
 The build script signs the app ad hoc for local use. Distribution to other Macs requires appropriate signing and notarization.
+
+## Releases
+
+Publish a GitHub release with a tag such as `v0.1.0`. The release workflow tests the code, builds and verifies a universal app, and attaches `Battery-Predictor-v0.1.0-universal.zip` and its SHA-256 checksum. Assets appear when the workflow finishes. Failed builds can be retried from Actions, or via the workflow's manual tag input.
+
+The release tag sets the app version automatically. `VERSION` supplies the version for local builds; update it when preparing a new version. For example:
+
+```sh
+gh release create v0.1.0 --target main --title "Battery Predictor 0.1.0" --generate-notes
+```
