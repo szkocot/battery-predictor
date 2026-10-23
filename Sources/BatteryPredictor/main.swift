@@ -36,28 +36,34 @@ struct PowerSnapshot {
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private var timer: Timer?
     private var powerSource: CFRunLoopSource?
     private var wakeObserver: NSObjectProtocol?
     private let batteryItem = NSMenuItem(title: "Battery: unavailable", action: nil, keyEquivalent: "")
     private let powerItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+    private let loginItem = LoginItemController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         let menu = NSMenu()
+        menu.delegate = self
         menu.addItem(NSMenuItem(title: "Battery Predictor", action: nil, keyEquivalent: ""))
         menu.addItem(.separator())
         menu.addItem(batteryItem)
         menu.addItem(powerItem)
+        menu.addItem(.separator())
+        menu.addItem(loginItem.menuItem)
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "Quit Battery Predictor", action: #selector(quitApp), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
         statusItem.menu = menu
         refresh()
+        loginItem.configureOnFirstLaunch()
+        loginItem.refresh()
 
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             self?.refresh()
@@ -86,6 +92,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func quitApp() { NSApplication.shared.terminate(nil) }
+
+    func menuWillOpen(_ menu: NSMenu) { loginItem.refresh() }
 
     func applicationWillTerminate(_ notification: Notification) {
         timer?.invalidate()
